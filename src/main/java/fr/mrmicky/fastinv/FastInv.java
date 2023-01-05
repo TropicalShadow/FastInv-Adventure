@@ -23,6 +23,7 @@
  */
 package fr.mrmicky.fastinv;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -33,6 +34,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +83,16 @@ public class FastInv implements InventoryHolder {
     }
 
     /**
+     * Create a new FastInv with a custom size and title.
+     *
+     * @param size  The size of the inventory.
+     * @param title The title (name) of the inventory.
+     */
+    public FastInv(int size, Component title) {
+        this(size, InventoryType.CHEST, title);
+    }
+
+    /**
      * Create a new FastInv with a custom type.
      *
      * @param type The type of the inventory.
@@ -96,6 +109,38 @@ public class FastInv implements InventoryHolder {
      */
     public FastInv(InventoryType type, String title) {
         this(0, Objects.requireNonNull(type, "type"), title);
+    }
+
+    /**
+     * Create a new FastInv with a custom type and title.
+     *
+     * @param type  The type of the inventory.
+     * @param title The title of the inventory.
+     */
+    public FastInv(InventoryType type, Component title) {
+        this(0, Objects.requireNonNull(type, "type"), title);
+    }
+
+    private FastInv(int size, InventoryType type, Component title) {
+        if(FastInvManager.PAPER_ADVENTURE.get()) {
+            try {
+                if (type == InventoryType.CHEST && size > 0) {
+                    Method createInventory = Bukkit.class.getDeclaredMethod("createInventory", InventoryHolder.class, int.class, Component.class);
+                    this.inventory = (Inventory)createInventory.invoke(null,this, size, title);
+                } else {
+                    Method createInventory = Bukkit.class.getDeclaredMethod("createInventory", InventoryHolder.class, InventoryType.class, Component.class);
+                    this.inventory = (Inventory)createInventory.invoke(null,this, type, title);
+                }
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new UnsupportedOperationException("Paper Adventure is not enabled, use the String constructor instead");
+        }
+
+        if (this.inventory.getHolder() != this) {
+            throw new IllegalStateException("Inventory holder is not FastInv, found: " + this.inventory.getHolder());
+        }
     }
 
     private FastInv(int size, InventoryType type, String title) {

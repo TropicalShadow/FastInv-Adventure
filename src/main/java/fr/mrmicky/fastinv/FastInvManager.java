@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class FastInvManager {
 
     private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+    public static final AtomicBoolean PAPER_ADVENTURE = new AtomicBoolean(false);
 
     private FastInvManager() {
         throw new UnsupportedOperationException();
@@ -62,6 +63,11 @@ public final class FastInvManager {
         if (REGISTERED.getAndSet(true)) {
             throw new IllegalStateException("FastInv is already registered");
         }
+
+        try{
+            Class.forName("net.kyori.adventure.text.Component");
+            PAPER_ADVENTURE.set(true);
+        } catch (ClassNotFoundException ignored) {}
 
         Bukkit.getPluginManager().registerEvents(new InventoryListener(plugin), plugin);
     }
